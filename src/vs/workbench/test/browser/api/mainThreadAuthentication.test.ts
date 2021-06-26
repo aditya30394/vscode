@@ -115,21 +115,11 @@ suite('MainThreadAuthentication', () => {
 
 	suiteTeardown(() => {
 		mainThreadAuthentication.$unregisterAuthenticationProvider('test');
+		mainThreadAuthentication.dispose();
 	});
 
 	test('Can get a session', async () => {
 		const session = await mainThreadAuthentication.$getSession('test', ['foo'], 'testextension', 'test extension', { createIfNone: true, clearSessionPreference: false });
-		assert.strictEqual(session?.id, 'test');
-		assert.strictEqual(session?.scopes[0], 'foo');
-	});
-
-	test('Can get multiple sessions (with different scopes) in one extension', async () => {
-		let session = await mainThreadAuthentication.$getSession('test', ['foo'], 'testextension', 'test extension', { createIfNone: true, clearSessionPreference: false });
-		session = await mainThreadAuthentication.$getSession('test', ['bar'], 'testextension', 'test extension', { createIfNone: true, clearSessionPreference: false });
-		assert.strictEqual(session?.id, 'test');
-		assert.strictEqual(session?.scopes[0], 'bar');
-
-		session = await mainThreadAuthentication.$getSession('test', ['foo'], 'testextension', 'test extension', { createIfNone: false, clearSessionPreference: false });
 		assert.strictEqual(session?.id, 'test');
 		assert.strictEqual(session?.scopes[0], 'foo');
 	});

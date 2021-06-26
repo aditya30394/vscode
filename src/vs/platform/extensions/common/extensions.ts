@@ -117,7 +117,9 @@ export interface IWalkthroughStep {
 	readonly id: string;
 	readonly title: string;
 	readonly description: string | undefined;
-	readonly media: { path: string | { dark: string, light: string, hc: string }, altText?: string }
+	readonly media:
+	| { image: string | { dark: string, light: string, hc: string }, altText: string, markdown?: never }
+	| { markdown: string, image?: never }
 	readonly completionEvents?: string[];
 	/** @deprecated use `completionEvents: 'onCommand:...'` */
 	readonly doneOn?: { command: string };
@@ -129,7 +131,6 @@ export interface IWalkthrough {
 	readonly title: string;
 	readonly description: string;
 	readonly steps: IWalkthroughStep[];
-	readonly primary?: boolean;
 	readonly when?: string;
 }
 
@@ -137,8 +138,8 @@ export interface IStartEntry {
 	readonly title: string;
 	readonly description: string;
 	readonly command: string;
-	readonly type?: 'sample-folder' | 'sample-notebook' | string;
 	readonly when?: string;
+	readonly category: 'file' | 'folder' | 'notebook';
 }
 
 export interface IExtensionContributions {
@@ -337,30 +338,8 @@ export function isAuthenticaionProviderExtension(manifest: IExtensionManifest): 
 	return manifest.contributes && manifest.contributes.authentication ? manifest.contributes.authentication.length > 0 : false;
 }
 
-export interface IScannedExtension {
-	readonly identifier: IExtensionIdentifier;
-	readonly location: URI;
-	readonly type: ExtensionType;
-	readonly packageJSON: IExtensionManifest;
-	readonly packageNLS?: any;
-	readonly packageNLSUrl?: URI;
-	readonly readmeUrl?: URI;
-	readonly changelogUrl?: URI;
-	readonly isUnderDevelopment: boolean;
-}
-
-export interface ITranslatedScannedExtension {
-	readonly identifier: IExtensionIdentifier;
-	readonly location: URI;
-	readonly type: ExtensionType;
-	readonly packageJSON: IExtensionManifest;
-	readonly readmeUrl?: URI;
-	readonly changelogUrl?: URI;
-	readonly isUnderDevelopment: boolean;
-}
-
 export const IBuiltinExtensionsScannerService = createDecorator<IBuiltinExtensionsScannerService>('IBuiltinExtensionsScannerService');
 export interface IBuiltinExtensionsScannerService {
 	readonly _serviceBrand: undefined;
-	scanBuiltinExtensions(): Promise<IScannedExtension[]>;
+	scanBuiltinExtensions(): Promise<IExtension[]>;
 }

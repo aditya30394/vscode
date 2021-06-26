@@ -15,7 +15,7 @@ import { dispose } from 'vs/base/common/lifecycle';
 import { IExtension, ExtensionState, IExtensionsWorkbenchService, VIEWLET_ID, IExtensionsViewPaneContainer, IExtensionContainer, TOGGLE_IGNORE_EXTENSION_ACTION_ID, SELECT_INSTALL_VSIX_EXTENSION_COMMAND_ID } from 'vs/workbench/contrib/extensions/common/extensions';
 import { ExtensionsConfigurationInitialContent } from 'vs/workbench/contrib/extensions/common/extensionsFileTemplate';
 import { IGalleryExtension, IExtensionGalleryService, INSTALL_ERROR_MALICIOUS, INSTALL_ERROR_INCOMPATIBLE, IGalleryExtensionVersion, ILocalExtension, INSTALL_ERROR_NOT_SUPPORTED, InstallOptions, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService, IWebExtensionsScannerService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
+import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { ExtensionRecommendationReason, IExtensionIgnoredRecommendationsService, IExtensionRecommendationsService } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { ExtensionType, ExtensionIdentifier, IExtensionDescription, IExtensionManifest, isLanguagePackExtension, getWorkpaceSupportTypeMessage } from 'vs/platform/extensions/common/extensions';
@@ -58,8 +58,7 @@ import { IContextMenuProvider } from 'vs/base/browser/contextmenu';
 import { ILogService } from 'vs/platform/log/common/log';
 import * as Constants from 'vs/workbench/contrib/logs/common/logConstants';
 import { infoIcon, manageExtensionIcon, syncEnabledIcon, syncIgnoredIcon, trustIcon, warningIcon } from 'vs/workbench/contrib/extensions/browser/extensionsIcons';
-import { isWeb } from 'vs/base/common/platform';
-import { isWorkspaceTrustEnabled } from 'vs/workbench/services/workspaces/common/workspaceTrust';
+import { isIOS, isWeb } from 'vs/base/common/platform';
 import { IExtensionManifestPropertiesService } from 'vs/workbench/services/extensions/common/extensionManifestPropertiesService';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
 import { isVirtualWorkspace } from 'vs/platform/remote/common/remoteHosts';
@@ -111,6 +110,7 @@ export class PromptExtensionInstallFailureAction extends Action {
 		@IDialogService private readonly dialogService: IDialogService,
 		@ICommandService private readonly commandService: ICommandService,
 		@ILogService private readonly logService: ILogService,
+		@IExtensionManagementServerService private readonly extensionManagementServerService: IExtensionManagementServerService,
 	) {
 		super('extension.promptExtensionInstallFailure');
 	}
@@ -133,13 +133,12 @@ export class PromptExtensionInstallFailureAction extends Action {
 		}
 
 		if ([INSTALL_ERROR_INCOMPATIBLE, INSTALL_ERROR_MALICIOUS].includes(this.error.name)) {
-			await this.dialogService.show(Severity.Info, getErrorMessage(this.error), []);
+			await this.dialogService.show(Severity.Info, getErrorMessage(this.error));
 			return;
 		}
 
-
 		const promptChoices: IPromptChoice[] = [];
-		if (this.extension.gallery && this.productService.extensionsGallery) {
+		if (this.extension.gallery && this.productService.extensionsGallery && (this.extensionManagementServerService.localExtensionManagementServer || this.extensionManagementServerService.remoteExtensionManagementServer) && !isIOS) {
 			promptChoices.push({
 				label: localize('download', "Try Downloading Manually..."),
 				run: () => this.openerService.open(URI.parse(`${this.productService.extensionsGallery!.serviceUrl}/publishers/${this.extension.publisher}/vsextensions/${this.extension.name}/${this.version}/vspackage`)).then(() => {
@@ -599,7 +598,6 @@ export class WebInstallAction extends InstallInOtherServerAction {
 		@IExtensionManagementServerService extensionManagementServerService: IExtensionManagementServerService,
 		@IProductService productService: IProductService,
 		@IConfigurationService configurationService: IConfigurationService,
-		@IWebExtensionsScannerService private readonly webExtensionsScannerService: IWebExtensionsScannerService,
 		@IExtensionManifestPropertiesService extensionManifestPropertiesService: IExtensionManifestPropertiesService,
 	) {
 		super(`extensions.webInstall`, extensionManagementServerService.webExtensionManagementServer, false, extensionsWorkbenchService, extensionManagementServerService, productService, configurationService, extensionManifestPropertiesService);
@@ -607,13 +605,6 @@ export class WebInstallAction extends InstallInOtherServerAction {
 
 	protected getInstallLabel(): string {
 		return localize('install browser', "Install in Browser");
-	}
-
-	protected override canInstall(): boolean {
-		if (super.canInstall()) {
-			return !!this.extension?.gallery && this.webExtensionsScannerService.canAddExtension(this.extension.gallery);
-		}
-		return false;
 	}
 
 }
@@ -2091,9 +2082,8 @@ export class SystemDisabledWarningAction extends ExtensionAction {
 		@IWorkspaceTrustManagementService private readonly workspaceTrustService: IWorkspaceTrustManagementService,
 		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IExtensionManifestPropertiesService private readonly extensionManifestPropertiesService: IExtensionManifestPropertiesService,
-		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService
 	) {
 		super('extensions.install', '', `${SystemDisabledWarningAction.CLASS} hide`, false);
 		this._register(this.labelService.onDidChangeFormatters(() => this.update(), this));
@@ -2130,6 +2120,11 @@ export class SystemDisabledWarningAction extends ExtensionAction {
 					localize('disabled because of virtual workspace', "This extension has been disabled because it does not support virtual workspaces."));
 				return;
 			}
+		}
+		if (this.extension.enablementState === EnablementState.DisabledByExtensionDependency) {
+			this.class = `${SystemDisabledWarningAction.WARNING_CLASS}`;
+			this.tooltip = localize('extension disabled because of dependency', "This extension has been disabled because it depends on an extension that is disabled.");
+			return;
 		}
 		if (this.extensionManagementServerService.localExtensionManagementServer && this.extensionManagementServerService.remoteExtensionManagementServer) {
 			if (isLanguagePackExtension(this.extension.local.manifest)) {
@@ -2174,7 +2169,7 @@ export class SystemDisabledWarningAction extends ExtensionAction {
 		}
 
 		const untrustedSupportType = this.extensionManifestPropertiesService.getExtensionUntrustedWorkspaceSupportType(this.extension.local.manifest);
-		if (isWorkspaceTrustEnabled(this.configurationService) && untrustedSupportType !== true && !this.workspaceTrustService.isWorkpaceTrusted()) {
+		if (this.workspaceTrustService.workspaceTrustEnabled && untrustedSupportType !== true && !this.workspaceTrustService.isWorkpaceTrusted()) {
 			const untrustedDetails = getWorkpaceSupportTypeMessage(this.extension.local.manifest.capabilities?.untrustedWorkspaces);
 			this.enabled = true;
 			this.class = `${SystemDisabledWarningAction.TRUST_CLASS}`;

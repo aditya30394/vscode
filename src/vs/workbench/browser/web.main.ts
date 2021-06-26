@@ -210,7 +210,7 @@ class BrowserMain extends Disposable {
 		]);
 
 		// Workspace Trust Service
-		const workspaceTrustManagementService = new WorkspaceTrustManagementService(configurationService, environmentService, storageService, uriIdentityService, configurationService);
+		const workspaceTrustManagementService = new WorkspaceTrustManagementService(configurationService, storageService, uriIdentityService, environmentService, configurationService, remoteAuthorityResolverService);
 		serviceCollection.set(IWorkspaceTrustManagementService, workspaceTrustManagementService);
 
 		// Update workspace trust so that configuration is updated accordingly
@@ -313,12 +313,16 @@ class BrowserMain extends Disposable {
 				async run(accessor: ServicesAccessor): Promise<void> {
 					const dialogService = accessor.get(IDialogService);
 					const hostService = accessor.get(IHostService);
+					const storageService = accessor.get(IStorageService);
 					const result = await dialogService.confirm({
 						message: localize('reset user data message', "Would you like to reset your data (settings, keybindings, extensions, snippets and UI State) and reload?")
 					});
 
 					if (result.confirmed) {
 						await indexedDBUserDataProvider?.reset();
+						if (storageService instanceof BrowserStorageService) {
+							await storageService.clear();
+						}
 					}
 
 					hostService.reload();
@@ -331,7 +335,7 @@ class BrowserMain extends Disposable {
 	}
 
 	private async createStorageService(payload: IWorkspaceInitializationPayload, environmentService: IWorkbenchEnvironmentService, fileService: IFileService, logService: ILogService): Promise<BrowserStorageService> {
-		const storageService = new BrowserStorageService(payload, environmentService, fileService);
+		const storageService = new BrowserStorageService(payload, logService, environmentService, fileService);
 
 		try {
 			await storageService.initialize();

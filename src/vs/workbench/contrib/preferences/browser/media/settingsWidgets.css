@@ -22,12 +22,6 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-value {
-	max-width: 90%;
-}
-.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-sibling {
-	max-width: 10%;
-}
 .settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-object-widget .setting-list-object-key,
 .settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-object-widget .setting-list-object-input-key {
 	margin-left: 4px;
@@ -74,6 +68,10 @@
 	top: 0px;
 }
 
+.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-row {
+	display: flex;
+}
+
 .settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-row,
 .settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-list .setting-list-row-header {
 	position: relative;
@@ -111,6 +109,7 @@
 	padding: 2px;
 	margin-right: 2px;
 	display: flex;
+	color: inherit;
 	align-items: center;
 	justify-content: center;
 }

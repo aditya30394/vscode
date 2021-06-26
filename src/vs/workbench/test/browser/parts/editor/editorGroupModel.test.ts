@@ -24,7 +24,7 @@ import { DisposableStore } from 'vs/base/common/lifecycle';
 import { TestContextService, TestStorageService } from 'vs/workbench/test/common/workbenchTestServices';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 
-suite('Workbench editor group model', () => {
+suite('EditorGroupModel', () => {
 
 	function inst(): IInstantiationService {
 		let inst = new TestInstantiationService();
@@ -159,6 +159,7 @@ suite('Workbench editor group model', () => {
 			super();
 		}
 		override get typeId() { return 'testFileEditorInputForGroups'; }
+		override get editorId() { return this.id; }
 		override async resolve(): Promise<IEditorModel | null> { return null; }
 		setPreferredName(name: string): void { }
 		setPreferredDescription(description: string): void { }
@@ -167,11 +168,15 @@ suite('Workbench editor group model', () => {
 		getEncoding() { return undefined; }
 		setPreferredEncoding(encoding: string) { }
 		setForceOpenAsBinary(): void { }
+		setPreferredContents(contents: string): void { }
 		setMode(mode: string) { }
 		setPreferredMode(mode: string) { }
 		isResolved(): boolean { return false; }
 
 		override matches(other: TestFileEditorInput): boolean {
+			if (super.matches(other)) {
+				return true;
+			}
 			return other && this.id === other.id && other instanceof TestFileEditorInput;
 		}
 	}
@@ -257,7 +262,7 @@ suite('Workbench editor group model', () => {
 		assert.strictEqual(clone.count, 3);
 
 		let didEditorLabelChange = false;
-		const toDispose = clone.onDidEditorLabelChange(() => didEditorLabelChange = true);
+		const toDispose = clone.onDidChangeEditorLabel(() => didEditorLabelChange = true);
 		input1.setLabel();
 		assert.ok(didEditorLabelChange);
 
@@ -274,6 +279,21 @@ suite('Workbench editor group model', () => {
 		assert.strictEqual(clone.isSticky(input3), false);
 
 		toDispose.dispose();
+	});
+
+	test('isActive - untyped', () => {
+		const group = createEditorGroupModel();
+		const input = new TestFileEditorInput('testInput', URI.file('fake'));
+		const input2 = new TestFileEditorInput('testInput2', URI.file('fake2'));
+		const untypedInput = { resource: URI.file('/fake'), options: { override: 'testInput' } };
+		const untypedNonActiveInput = { resource: URI.file('/fake2'), options: { override: 'testInput2' } };
+
+		group.openEditor(input, { pinned: true, active: true });
+		group.openEditor(input2, { active: false });
+
+		assert.ok(group.isActive(input));
+		assert.ok(group.isActive(untypedInput));
+		assert.ok(!group.isActive(untypedNonActiveInput));
 	});
 
 	test('contains()', function () {
@@ -1559,12 +1579,12 @@ suite('Workbench editor group model', () => {
 		});
 
 		let label1ChangeCounter = 0;
-		group1.onDidEditorLabelChange(() => {
+		group1.onDidChangeEditorLabel(() => {
 			label1ChangeCounter++;
 		});
 
 		let label2ChangeCounter = 0;
-		group2.onDidEditorLabelChange(() => {
+		group2.onDidChangeEditorLabel(() => {
 			label2ChangeCounter++;
 		});
 
