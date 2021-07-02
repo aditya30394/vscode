@@ -19,17 +19,6 @@ jobs:
           "location": "WestUs2",
           "vscs_target": "development"
           }'
-      - id: create-prebuild-ppe
-        run: |
-          curl -X "POST" "https://api.github.com/vscs_internal/user/Fengyi-Li/codespaces/prebuild" \
-          -H 'Content-Type: application/json; charset=utf-8' \
-          -H 'Authorization: token ${{ secrets.CODESPACE_BUILD_BOT_TOKEN }}' \
-          -d $'{ 
-          "ref": "main",
-          "repository_id": 370897467,
-          "location": "WestUs2",
-          "vscs_target": "ppe"
-          }'
       - id: create-prebuild-local
         run: |
           curl -X "POST" "https://api.github.com/vscs_internal/user/Fengyi-Li/codespaces/prebuild" \
