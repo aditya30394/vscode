@@ -31,7 +31,7 @@
 
 	// Optionally loads a cached yarn install for the repo
 	"postCreateCommand": ".devcontainer/cache/restore-diff.sh",
-	"onCreateCommand" : "git clean -f"
-	"updateContentCommand" : "git status"
+	"onCreateCommand" : "git clean -f",
+	"updateContentCommand" : "git status",
 	"remoteUser": "node"
 }
