@@ -33,5 +33,6 @@
 	"postCreateCommand": ".devcontainer/cache/restore-diff.sh",
 	"onCreateCommand" : "git status",
 	"updateContentCommand" : "ls",
+	"initializeCommmand" : "ls",
 	"remoteUser": "node"
 }
