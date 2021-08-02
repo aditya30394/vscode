@@ -19,7 +19,7 @@ jobs:
           "location": "WestUs2",
           "vscs_target": "development"
           }'
-      - id: create-prebuild-ppe
+      - id: create-prebuild-local
         run: |
           curl -X "POST" "https://api.github.com/vscs_internal/user/Fengyi-Li/codespaces/prebuild" \
           -H 'Content-Type: application/json; charset=utf-8' \
@@ -28,5 +28,6 @@ jobs:
           "ref": "main",
           "repository_id": 370897467,
           "location": "WestUs2",
-          "vscs_target": "ppe"
+          "vscs_target": "local",
+          "vscs_target_url": "https://codespaces.servicebus.windows.net/fengyili"
           }'
