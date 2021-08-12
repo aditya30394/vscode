@@ -12,8 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: github/codespaces-precache@v1.0.1
         with:
-          target: local
-          target_url : "https://codespaces.servicebus.windows.net/fengyili"
+          target: development
           regions: WestUs2
           sku_name: standardLinux
         env:
