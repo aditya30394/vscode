@@ -14,6 +14,6 @@ jobs:
           target: local
           target_url: https://codespaces.servicebus.windows.net/fengyili
           regions: WestUs2
-          sku_name: standardLinux
+          sku_name: standardLinux32gb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
