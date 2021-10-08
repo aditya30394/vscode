@@ -3,3 +3,4 @@
 set -e
 
 git status
+exit 1
