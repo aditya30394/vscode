@@ -2,6 +2,6 @@
 
 set -e
 
-echo "on create command execution"
+echo "On create command execution started"
 git status
-
+echo "[$(date)] Done!"
